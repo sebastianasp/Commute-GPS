@@ -9,6 +9,10 @@
 import UIKit
 import MapKit
 
+protocol HandleMapSearch {
+    func dropPinZoomIn(placemark: MKPlacemark)
+}
+
 class AddGeoViewController: UIViewController {
     
     @IBOutlet weak var mapView: MKMapView!
@@ -16,6 +20,7 @@ class AddGeoViewController: UIViewController {
     
     let locationManager = CLLocationManager()
     var resultSearchController: UISearchController? = nil
+    var selectedPin: MKPlacemark? = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,20 +40,22 @@ class AddGeoViewController: UIViewController {
         searchBar.sizeToFit()
         searchBar.placeholder = "Search for places"
         navigationItem.titleView = resultSearchController?.searchBar
-                    
+        
         resultSearchController?.hidesNavigationBarDuringPresentation = false
         resultSearchController?.dimsBackgroundDuringPresentation = true
         definesPresentationContext = true
         
         locationSearchTable.mapView = mapView
         
+        var handleMapSearchDelegate: HandleMapSearch? = nil
         
-     
+        
+        
     }
 }
 
 
-// EXTENSION OF VIEWCONTROLLER
+// EXTENSIONS OF VIEWCONTROLLER
 
 extension AddGeoViewController: CLLocationManagerDelegate {
     
@@ -79,21 +86,32 @@ extension AddGeoViewController: CLLocationManagerDelegate {
         // Dispose of any resources that can be recreated.
     }
 }
-    extension AddGeoViewController: UISearchControllerDelegate {
-        func willDismissSearchController(_ searchController: UISearchController) {
-            print("User dismissed the earch controller") }
-        }
 
-    
-    
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-     // Get the new view controller using segue.destinationViewController.
-     // Pass the selected object to the new view controller.
-     }
-     */
-    
+extension AddGeoViewController: UISearchControllerDelegate {
+    func willDismissSearchController(_ searchController: UISearchController) {
+        print("User dismissed the earch controller") }
+}
+
+
+extension AddGeoViewController: HandleMapSearch {
+    func dropPinZoomIn(placemark: MKPlacemark) {
+        func dropPinZoomIn(placemark:MKPlacemark){
+            // cache the pin
+            selectedPin = placemark
+            // clear existing pins
+            mapView.removeAnnotations(mapView.annotations)
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = placemark.coordinate
+            annotation.title = placemark.name
+            if let city = placemark.locality,
+                let state = placemark.administrativeArea {
+                annotation.subtitle = "(city) (state)"
+            }
+            mapView.addAnnotation(annotation)
+            let span = MKCoordinateSpanMake(0.05, 0.05)
+            let region = MKCoordinateRegionMake(placemark.coordinate, span)
+            mapView.setRegion(region, animated: true)
+    }
+}
+}
 
